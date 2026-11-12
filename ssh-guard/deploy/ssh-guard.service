@@ -1,0 +1,30 @@
+[Unit]
+Description=SSH Guard - multi-service brute force detector
+After=network-online.target ssh.service sshd.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=SSH_GUARD_HOME=/var/lib/ssh-guard
+Environment=PYTHONUNBUFFERED=1
+# secrets (ES_PASSWORD, ES_API_KEY, SMTP_PASSWORD, TELEGRAM_TOKEN) live here, chmod 600
+EnvironmentFile=-/etc/ssh-guard.env
+ExecStart=/usr/bin/python3 /opt/ssh-guard/ssh_guard.py --headless
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+
+# Root is needed to read the logs and change firewall rules; everything else is locked down.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=full
+ReadWritePaths=/var/lib/ssh-guard
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+LockPersonality=yes
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_DAC_READ_SEARCH
+
+[Install]
+WantedBy=multi-user.target
